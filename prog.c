@@ -53,7 +53,6 @@ void read_array(double **a, double **b)
  */
 void relax_array(double **a, double **b)
 {
-
     for (int i = 1; i < args.dimension - 1; i++)
     {
         for (int j = 1; j < args.dimension - 1; j++)
@@ -118,7 +117,6 @@ void alloc_memory(double ***a_out, double ***b_out, double **a_buf_out, double *
 
 void process_args(int argc, char *argv[])
 {
-
     if (argc != 5)
     {
         printf("unexpected number of arguments.");
@@ -156,7 +154,6 @@ void process_args(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
-
     process_args(argc, argv);
 
     double **a = NULL;
@@ -176,7 +173,7 @@ int main(int argc, char *argv[])
     {
         relax_array(a, b);
         precision = calculate_precision(a, b);
-        // swapping the arrays, ensures results are always stored in 'a'
+        // swapping the arrays, ensures results are always stored in 'a' at the start of next iteration
         swap_array(&a, &b);
     } while (precision > args.precision);
 
