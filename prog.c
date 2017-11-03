@@ -86,6 +86,36 @@ double calculate_precision(double **a, double **b)
     return maxPrecision;
 }
 
+void alloc_memory(double ***a_out, double ***b_out, double **a_buf_out, double **b_buf_out)
+{
+    // allocate memory for pointers which will point to the "nested arrays" inside the "main 2d arrays"
+    // one to read from, and one to write to, so that neighbors arent affected
+    double **a = malloc(args.dimension * sizeof(double *));
+    double **b = malloc(args.dimension * sizeof(double *));
+
+    // allocate memory for pointer to the whole "2d array"
+    double *a_buf = malloc(args.dimension * args.dimension * sizeof(double));
+    double *b_buf = malloc(args.dimension * args.dimension * sizeof(double));
+
+    if (a == NULL || b == NULL || a_buf == NULL || b_buf == NULL)
+    {
+        printf("malloc failed.");
+        exit(EXIT_FAILURE);
+    }
+
+    // each a[i] points to start of a "nested array"
+    for (int i = 0; i < args.dimension; i++)
+    {
+        a[i] = a_buf + args.dimension * i;
+        b[i] = b_buf + args.dimension * i;
+    }
+
+    *a_out = a;
+    *b_out = b;
+    *a_buf_out = a_buf;
+    *b_buf_out = b_buf;
+}
+
 void process_args(int argc, char *argv[])
 {
 
@@ -129,27 +159,12 @@ int main(int argc, char *argv[])
 
     process_args(argc, argv);
 
-    // allocate memory for pointers which will point to the "nested arrays" inside the "main 2d arrays"
-    // one to read from, and one to write to, so that neighbors arent affected
-    double **a = malloc(args.dimension * sizeof(double *));
-    double **b = malloc(args.dimension * sizeof(double *));
+    double **a = NULL;
+    double **b = NULL;
+    double *a_buf = NULL;
+    double *b_buf = NULL;
 
-    // allocate memory for pointer to the whole "2d array"
-    double *a_buf = malloc(args.dimension * args.dimension * sizeof(double));
-    double *b_buf = malloc(args.dimension * args.dimension * sizeof(double));
-
-    if (a == NULL || b == NULL || a_buf == NULL || b_buf == NULL)
-    {
-        printf("malloc failed.");
-        return 1;
-    }
-
-    // each a[i] points to start of a "nested array"
-    for (int i = 0; i < args.dimension; i++)
-    {
-        a[i] = a_buf + args.dimension * i;
-        b[i] = b_buf + args.dimension * i;
-    }
+    alloc_memory(&a, &b, &a_buf, &b_buf);
 
     read_array(a, b);
 
@@ -160,12 +175,9 @@ int main(int argc, char *argv[])
     do
     {
         relax_array(a, b);
-
         precision = calculate_precision(a, b);
-
         // swapping the arrays, ensures results are always stored in 'a'
         swap_array(&a, &b);
-
     } while (precision > args.precision);
 
     printf("Final array:\n");
