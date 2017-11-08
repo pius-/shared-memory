@@ -66,7 +66,7 @@ void populate_array()
 void relax_section(struct thread_args *thread_args)
 {
     char is_start = 1;
-    int cells_relaxed = 0;
+    int cells_remaining = thread_args->cells_to_relax;
 
     for (int i = thread_args->start_row; i < args.dimension - 1; i++)
     {
@@ -74,14 +74,14 @@ void relax_section(struct thread_args *thread_args)
         // reset to 1 for every new row
         for (int j = 1; j < args.dimension - 1; j++)
         {
+            if (cells_remaining == 0)
+                return;
+
             if (is_start)
             {
                 j = thread_args->start_col;
                 is_start = 0;
             }
-
-            if (cells_relaxed == thread_args->cells_to_relax)
-                return;
 
             double north = a[i - 1][j];
             double south = a[i + 1][j];
@@ -99,7 +99,7 @@ void relax_section(struct thread_args *thread_args)
                 is_done = 0;
             }
 
-            cells_relaxed++;
+            cells_remaining--;
         }
     }
 }
@@ -141,10 +141,6 @@ void relax_section_main(struct thread_args *thread_args)
         // other threads will be waiting at second barrier
         swap_array(&a, &b);
 
-#ifdef DEBUG
-        print_array(a);
-#endif
-
         // is_done can be set to false (0) by any thread,
         // that hasn't reached its precision, including this one
         if (is_done)
@@ -161,6 +157,10 @@ void relax_section_main(struct thread_args *thread_args)
 
             break;
         }
+
+#ifdef DEBUG
+        print_array(a);
+#endif
 
         // if any of the threads haven't reached their precision,
         // reset is_done to true and carry on to the next iteration
@@ -276,7 +276,7 @@ void alloc_work(struct thread_args *all_threads_args)
         all_threads_args[i].cells_to_relax = cells_to_relax;
         if (i < extra_cells)
         {
-            all_threads_args[i].cells_to_relax += 1;
+            all_threads_args[i].cells_to_relax++;
         }
 
         // calculate the row,col of where the next thread should start
