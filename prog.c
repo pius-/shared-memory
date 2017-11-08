@@ -112,11 +112,15 @@ void relax_section_thread(struct thread_args *thread_args)
         relax_section(thread_args);
 
         // wait for other threads to complete their part
-        pthread_barrier_wait(&barrier);
+        int wait = pthread_barrier_wait(&barrier);
+        if (wait != 0 && wait != PTHREAD_BARRIER_SERIAL_THREAD)
+            exit(EXIT_FAILURE);
 
         // wait until main thread prepares data for next iteration
         // and checks whether we need to continue
-        pthread_barrier_wait(&barrier);
+        wait = pthread_barrier_wait(&barrier);
+        if (wait != 0 && wait != PTHREAD_BARRIER_SERIAL_THREAD)
+            exit(EXIT_FAILURE);
     }
 }
 
@@ -129,7 +133,9 @@ void relax_section_main(struct thread_args *thread_args)
         if (args.threads > 1)
         {
             // wait for other threads to complete their part
-            pthread_barrier_wait(&barrier);
+            int wait = pthread_barrier_wait(&barrier);
+            if (wait != 0 && wait != PTHREAD_BARRIER_SERIAL_THREAD)
+                exit(EXIT_FAILURE);
         }
 
         // swap so that results are in 'a' for next iteration
@@ -149,7 +155,9 @@ void relax_section_main(struct thread_args *thread_args)
                 // if the threads are done, setting should_continue to 0,
                 // ensures the threads will exit the loop when they carry on
                 should_continue = 0;
-                pthread_barrier_wait(&barrier);
+                int wait = pthread_barrier_wait(&barrier);
+                if (wait != 0 && wait != PTHREAD_BARRIER_SERIAL_THREAD)
+                    exit(EXIT_FAILURE);
             }
 
             break;
@@ -162,7 +170,9 @@ void relax_section_main(struct thread_args *thread_args)
         if (args.threads > 1)
         {
             // allow other threads to go on to the next iteration
-            pthread_barrier_wait(&barrier);
+            int wait = pthread_barrier_wait(&barrier);
+            if (wait != 0 && wait != PTHREAD_BARRIER_SERIAL_THREAD)
+                exit(EXIT_FAILURE);
         }
     }
 }
@@ -176,13 +186,20 @@ void relax_array(struct thread_args *all_threads_args)
     // no need for barrier or extra threads if only one thread
     if (args.threads > 1)
     {
-        pthread_barrier_init(&barrier, NULL, (unsigned int)args.threads);
+        int init = pthread_barrier_init(&barrier, NULL,
+                                        (unsigned int)args.threads);
+
+        if (init != 0)
+            exit(EXIT_FAILURE);
 
         for (int i = 1; i < args.threads; i++)
         {
-            pthread_create(&threads[i], NULL,
-                           (void *(*)(void *))relax_section_thread,
-                           (void *)&all_threads_args[i]);
+            int create = pthread_create(&threads[i], NULL,
+                                        (void *(*)(void *))relax_section_thread,
+                                        (void *)&all_threads_args[i]);
+
+            if (create != 0)
+                exit(EXIT_FAILURE);
         }
     }
 
@@ -193,10 +210,14 @@ void relax_array(struct thread_args *all_threads_args)
     {
         for (int j = 1; j < args.threads; j++)
         {
-            pthread_join(threads[j], NULL);
+            int join = pthread_join(threads[j], NULL);
+            if (join != 0)
+                exit(EXIT_FAILURE);
         }
 
-        pthread_barrier_destroy(&barrier);
+        int destroy = pthread_barrier_destroy(&barrier);
+        if (destroy != 0)
+            exit(EXIT_FAILURE);
     }
 }
 
