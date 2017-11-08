@@ -40,10 +40,11 @@ void print_array(double **a)
     {
         for (int j = 0; j < args.dimension; j++)
         {
-            printf("%lf\t", a[i][j]);
+            printf("%f\t", a[i][j]);
         }
         printf("\n");
     }
+    printf("\n");
 }
 
 /*
@@ -140,7 +141,8 @@ void relax_section_main(struct thread_args *thread_args)
 
 void relax_array(struct thread_args *all_threads_args)
 {
-    // -1 because main thread will do first section
+    // since main thread will do first section
+    // we only need to create "args.threads - 1" threads
     pthread_t threads[args.threads - 1];
 
     // no need for barrier if only one thread
@@ -150,7 +152,9 @@ void relax_array(struct thread_args *all_threads_args)
 
         for (int i = 1; i < args.threads; i++)
         {
-            pthread_create(&threads[i], NULL, (void *(*)(void *))relax_section_thread, (void *)&all_threads_args[i]);
+            pthread_create(&threads[i], NULL,
+                           (void *(*)(void *))relax_section_thread,
+                           (void *)&all_threads_args[i]);
         }
     }
 
@@ -165,8 +169,7 @@ void relax_array(struct thread_args *all_threads_args)
         {
             if (args.threads > 1)
             {
-                // if the threads are done,
-                // setting should_continue to 0,
+                // if the threads are done, setting should_continue to 0,
                 // ensures the threads will exit the loop when they carry on
                 should_continue = 0;
                 pthread_barrier_wait(&barrier);
@@ -175,7 +178,7 @@ void relax_array(struct thread_args *all_threads_args)
             break;
         }
 
-        // if any of the threads haven't reached their precision
+        // if any of the threads haven't reached their precision,
         // reset is_done to true and carry on to the next iteration
         is_done = 1;
 
@@ -197,19 +200,26 @@ void relax_array(struct thread_args *all_threads_args)
     }
 }
 
-void alloc_memory(double **a_buf_out, double **b_buf_out, struct thread_args **all_threads_args_out)
+void alloc_memory(
+    double **a_buf_out, 
+    double **b_buf_out, 
+    struct thread_args **all_threads_args_out)
 {
     // memory for each thread arguments
-    struct thread_args *all_threads_args = malloc((unsigned long)args.threads * sizeof(struct thread_args));
+    struct thread_args *all_threads_args = malloc(
+        (unsigned long)args.threads * sizeof(struct thread_args));
 
     // memory for array
     a = malloc((unsigned long)args.dimension * sizeof(double *));
     b = malloc((unsigned long)args.dimension * sizeof(double *));
 
-    double *a_buf = malloc( (unsigned long)(args.dimension * args.dimension) * sizeof(double));
-    double *b_buf = malloc( (unsigned long)(args.dimension * args.dimension) * sizeof(double));
+    double *a_buf = malloc(
+        (unsigned long)(args.dimension * args.dimension) * sizeof(double));
+    double *b_buf = malloc(
+        (unsigned long)(args.dimension * args.dimension) * sizeof(double));
 
-    if (a == NULL || b == NULL || a_buf == NULL || b_buf == NULL || all_threads_args == NULL)
+    if (a == NULL || b == NULL || a_buf == NULL || b_buf == NULL 
+        || all_threads_args == NULL)
     {
         printf("malloc failed.");
         exit(EXIT_FAILURE);
@@ -231,15 +241,17 @@ void alloc_memory(double **a_buf_out, double **b_buf_out, struct thread_args **a
 
 void alloc_work(struct thread_args *all_threads_args)
 {
+    int total_cells_to_relax = (args.dimension - 2) * (args.dimension - 2);
+
     // each thread will relax n cells, where n is cells_to_relax
-    int cells_to_relax = (args.dimension - 2) * (args.dimension - 2) / args.threads;
+    int cells_to_relax = total_cells_to_relax / args.threads;
 
-    // first m cells will relax n + 1, where m is extra_cells and n is cells_to_relax
-    int extra_cells = (args.dimension - 2) * (args.dimension - 2) % args.threads;
+    // first m cells will relax n + 1,
+    // where m is extra_cells and n is cells_to_relax
+    int extra_cells = total_cells_to_relax % args.threads;
 
-    // although first thread should start at 1,1, starting at 0,0,
-    // makes calculating the starting point of the next thread easier
-    // to get the actual starting point we later add 1,1
+    // to simplify starting point calculations
+    // we start at 0,0 and add 1,1 afterwards
     int row = 0, col = 0;
 
     for (int i = 0; i < args.threads; i++)
@@ -254,9 +266,9 @@ void alloc_work(struct thread_args *all_threads_args)
         }
 
         // calculate the row,col of where the next thread should start
-        // args.dimension - 2, ensures we are ignoring the boundary
-        // integer division gives us the number of rows the thread will relax
-        // modulus will give us the column number
+        // * args.dimension - 2, ensures we are ignoring the boundary
+        // * integer division gives us the number of rows the thread will relax
+        // * modulus will give us the column number
         int offset = col + all_threads_args[i].cells_to_relax;
         row += offset / (args.dimension - 2);
         col = offset % (args.dimension - 2);
