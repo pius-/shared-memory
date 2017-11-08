@@ -5,8 +5,6 @@
 #include <unistd.h>
 #include <pthread.h>
 
-#define DEBUG
-
 struct program_args
 {
     char *filename;   // -f
@@ -306,19 +304,15 @@ void process_args(int argc, char *argv[])
         {
         case 'f':
             args.filename = optarg;
-            printf("using input file: %s\n", args.filename);
             break;
         case 'd':
             args.dimension = atoi(optarg);
-            printf("using dimension: %d\n", args.dimension);
             break;
         case 't':
             args.threads = atoi(optarg);
-            printf("using threads: %d\n", args.threads);
             break;
         case 'p':
             args.precision = atof(optarg);
-            printf("using precision: %lf\n", args.precision);
             break;
         default:
             printf("unexpected argument.");
@@ -331,6 +325,13 @@ int main(int argc, char *argv[])
 {
     process_args(argc, argv);
 
+#ifdef DEBUG
+    printf("using input file: %s\n", args.filename);
+    printf("using dimension: %d\n", args.dimension);
+    printf("using threads: %d\n", args.threads);
+    printf("using precision: %lf\n", args.precision);
+#endif
+
     double *a_buf = NULL;
     double *b_buf = NULL;
     struct thread_args *all_threads_args = NULL;
@@ -340,11 +341,15 @@ int main(int argc, char *argv[])
 
     read_array();
 
+#ifdef DEBUG
     printf("Input array:\n");
     print_array(a);
+#endif
     relax_array(all_threads_args);
+#ifdef DEBUG
     printf("Output array:\n");
     print_array(a);
+#endif
 
     // deallocate memory
     free(a);
