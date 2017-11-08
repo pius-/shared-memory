@@ -124,20 +124,20 @@ void relax_section_main(struct thread_args *thread_args)
 {
     while (1)
     {
-    relax_section(thread_args);
+        relax_section(thread_args);
 
-    if (args.threads > 1)
-    {
-        // wait for other threads to complete their part
-        pthread_barrier_wait(&barrier);
-    }
+        if (args.threads > 1)
+        {
+            // wait for other threads to complete their part
+            pthread_barrier_wait(&barrier);
+        }
 
-    // swap so that results are in 'a' for next iteration
-    // other threads will be waiting at second barrier
-    swap_array(&a, &b);
+        // swap so that results are in 'a' for next iteration
+        // other threads will be waiting at second barrier
+        swap_array(&a, &b);
 
 #ifdef DEBUG
-    print_array(a);
+        print_array(a);
 #endif
 
         // is_done can be set to false (0) by any thread,
@@ -227,7 +227,7 @@ void alloc_memory(
 
     // each a[i] points to start of a row
     for (int i = 0; i < args.dimension; i++)
-{
+    {
         a[i] = *a_buf + args.dimension * i;
         b[i] = *b_buf + args.dimension * i;
     }
