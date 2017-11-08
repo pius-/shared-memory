@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <string.h>
 #include <unistd.h>
 #include <pthread.h>
 
@@ -46,18 +45,20 @@ void print_array(double **a)
 }
 
 /*
- * Reads the values of the initial array from file into 'a' and 'b'.
+ * Populates the array with values into 'a' and 'b'.
  * Initially both 'a' and 'b' will be the same.
  */
-void read_array()
+void populate_array()
 {
-    FILE *file = fopen(args.filename, "r");
     for (int i = 0; i < args.dimension; i++)
     {
         for (int j = 0; j < args.dimension; j++)
         {
-            fscanf(file, "%lf", &a[i][j]);
-            b[i][j] = a[i][j];
+            // using rand generates the same random values on multiple runs
+            // as it uses the same seed
+            int val = rand() % 10;
+            a[i][j] = val;
+            b[i][j] = val;
         }
     }
 }
@@ -185,7 +186,7 @@ void relax_array(struct thread_args *all_threads_args)
     if (args.threads > 1)
     {
         int init = pthread_barrier_init(&barrier, NULL,
-                                        (unsigned int)args.threads);
+                (unsigned int)args.threads);
 
         if (init != 0)
             exit(EXIT_FAILURE);
@@ -193,8 +194,8 @@ void relax_array(struct thread_args *all_threads_args)
         for (int i = 1; i < args.threads; i++)
         {
             int create = pthread_create(&threads[i], NULL,
-                                        (void *(*)(void *))relax_section_thread,
-                                        (void *)&all_threads_args[i]);
+                    (void *(*)(void *))relax_section_thread,
+                    (void *)&all_threads_args[i]);
 
             if (create != 0)
                 exit(EXIT_FAILURE);
@@ -220,9 +221,9 @@ void relax_array(struct thread_args *all_threads_args)
 }
 
 void alloc_memory(
-    double **a_buf,
-    double **b_buf,
-    struct thread_args **all_threads_args)
+        double **a_buf,
+        double **b_buf,
+        struct thread_args **all_threads_args)
 {
     // memory for each thread arguments
     *all_threads_args = malloc(
@@ -290,33 +291,30 @@ void alloc_work(struct thread_args *all_threads_args)
 
 void process_args(int argc, char *argv[])
 {
-    if (argc != 5)
+    if (argc != 4)
     {
         printf("unexpected number of arguments.");
         exit(EXIT_FAILURE);
     }
 
     int opt;
-    const char *optstring = "f:d:t:p:";
+    const char *optstring = "d:t:p:";
     while ((opt = getopt(argc, argv, optstring)) != -1)
     {
         switch (opt)
         {
-        case 'f':
-            args.filename = optarg;
-            break;
-        case 'd':
-            args.dimension = atoi(optarg);
-            break;
-        case 't':
-            args.threads = atoi(optarg);
-            break;
-        case 'p':
-            args.precision = atof(optarg);
-            break;
-        default:
-            printf("unexpected argument.");
-            exit(EXIT_FAILURE);
+            case 'd':
+                args.dimension = atoi(optarg);
+                break;
+            case 't':
+                args.threads = atoi(optarg);
+                break;
+            case 'p':
+                args.precision = atof(optarg);
+                break;
+            default:
+                printf("unexpected argument.");
+                exit(EXIT_FAILURE);
         }
     }
 }
@@ -326,7 +324,6 @@ int main(int argc, char *argv[])
     process_args(argc, argv);
 
 #ifdef DEBUG
-    printf("using input file: %s\n", args.filename);
     printf("using dimension: %d\n", args.dimension);
     printf("using threads: %d\n", args.threads);
     printf("using precision: %lf\n", args.precision);
@@ -339,13 +336,15 @@ int main(int argc, char *argv[])
     alloc_memory(&a_buf, &b_buf, &all_threads_args);
     alloc_work(all_threads_args);
 
-    read_array();
+    populate_array();
 
 #ifdef DEBUG
     printf("Input array:\n");
     print_array(a);
 #endif
+
     relax_array(all_threads_args);
+
 #ifdef DEBUG
     printf("Output array:\n");
     print_array(a);
