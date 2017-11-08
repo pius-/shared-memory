@@ -201,21 +201,21 @@ void relax_array(struct thread_args *all_threads_args)
 }
 
 void alloc_memory(
-    double **a_buf_out, 
-    double **b_buf_out, 
-    struct thread_args **all_threads_args_out)
+    double **a_buf,
+    double **b_buf,
+    struct thread_args **all_threads_args)
 {
     // memory for each thread arguments
-    struct thread_args *all_threads_args = malloc(
+    *all_threads_args = malloc(
         (unsigned long)args.threads * sizeof(struct thread_args));
 
     // memory for array
     a = malloc((unsigned long)args.dimension * sizeof(double *));
     b = malloc((unsigned long)args.dimension * sizeof(double *));
 
-    double *a_buf = malloc(
+    *a_buf = malloc(
         (unsigned long)(args.dimension * args.dimension) * sizeof(double));
-    double *b_buf = malloc(
+    *b_buf = malloc(
         (unsigned long)(args.dimension * args.dimension) * sizeof(double));
 
     if (a == NULL || b == NULL || a_buf == NULL || b_buf == NULL 
@@ -228,15 +228,9 @@ void alloc_memory(
     // each a[i] points to start of a row
     for (int i = 0; i < args.dimension; i++)
 {
-        a[i] = a_buf + args.dimension * i;
-        b[i] = b_buf + args.dimension * i;
+        a[i] = *a_buf + args.dimension * i;
+        b[i] = *b_buf + args.dimension * i;
     }
-
-    // TODO: fix this
-    *a_buf_out = a_buf;
-    *b_buf_out = b_buf;
-
-    *all_threads_args_out = all_threads_args;
 }
 
 void alloc_work(struct thread_args *all_threads_args)
