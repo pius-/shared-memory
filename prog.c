@@ -122,6 +122,8 @@ void relax_section_thread(struct thread_args *thread_args)
 
 void relax_section_main(struct thread_args *thread_args)
 {
+    while (1)
+    {
     relax_section(thread_args);
 
     if (args.threads > 1)
@@ -137,34 +139,9 @@ void relax_section_main(struct thread_args *thread_args)
 #ifdef DEBUG
     print_array(a);
 #endif
-}
-
-void relax_array(struct thread_args *all_threads_args)
-{
-    // since main thread will do first section
-    // we only need to create "args.threads - 1" threads
-    pthread_t threads[args.threads - 1];
-
-    // no need for barrier if only one thread
-    if (args.threads > 1)
-    {
-        pthread_barrier_init(&barrier, NULL, (unsigned int)args.threads);
-
-        for (int i = 1; i < args.threads; i++)
-        {
-            pthread_create(&threads[i], NULL,
-                           (void *(*)(void *))relax_section_thread,
-                           (void *)&all_threads_args[i]);
-        }
-    }
-
-    while (1)
-    {
-        // main thread will do first section
-        relax_section_main(&all_threads_args[0]);
 
         // is_done can be set to false (0) by any thread,
-        // that hasn't reached its precision
+        // that hasn't reached its precision, including this one
         if (is_done)
         {
             if (args.threads > 1)
@@ -188,6 +165,29 @@ void relax_array(struct thread_args *all_threads_args)
             pthread_barrier_wait(&barrier);
         }
     }
+}
+
+void relax_array(struct thread_args *all_threads_args)
+{
+    // since main thread will do first section
+    // we only need to create "args.threads - 1" threads
+    pthread_t threads[args.threads - 1];
+
+    // no need for barrier or extra threads if only one thread
+    if (args.threads > 1)
+    {
+        pthread_barrier_init(&barrier, NULL, (unsigned int)args.threads);
+
+        for (int i = 1; i < args.threads; i++)
+        {
+            pthread_create(&threads[i], NULL,
+                           (void *(*)(void *))relax_section_thread,
+                           (void *)&all_threads_args[i]);
+        }
+    }
+
+    // main thread will do first section
+    relax_section_main(&all_threads_args[0]);
 
     if (args.threads > 1)
     {
