@@ -69,14 +69,14 @@ void relax_section(struct thread_args *thread_args)
     char is_start = 1;
     int cells_relaxed = 0;
 
-    for (int i = 1; i < args.dimension - 1; i++)
+    for (int i = thread_args->start_row; i < args.dimension - 1; i++)
     {
+        // j cant be set to start_col as it needs to be
+        // reset to 1 for every new row
         for (int j = 1; j < args.dimension - 1; j++)
         {
-            // jump to the starting position of this thread
             if (is_start)
             {
-                i = thread_args->start_row;
                 j = thread_args->start_col;
                 is_start = 0;
             }
