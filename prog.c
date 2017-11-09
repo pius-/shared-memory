@@ -21,6 +21,7 @@ struct thread_args
 
 pthread_barrier_t barrier;
 char is_done = 1, should_continue = 1;
+int iterations = 0;
 double **a = NULL;
 double **b = NULL;
 
@@ -140,6 +141,8 @@ void relax_section_main(struct thread_args *thread_args)
         // swap so that results are in 'a' for next iteration
         // other threads will be waiting at second barrier
         swap_array(&a, &b);
+
+        iterations++;
 
         // is_done can be set to false (0) by any thread,
         // that hasn't reached its precision, including this one
@@ -323,11 +326,9 @@ int main(int argc, char *argv[])
 {
     process_args(argc, argv);
 
-#ifdef DEBUG
     printf("using dimension: %d\n", args.dimension);
     printf("using threads: %d\n", args.threads);
     printf("using precision: %lf\n", args.precision);
-#endif
 
     double *a_buf = NULL;
     double *b_buf = NULL;
@@ -339,16 +340,17 @@ int main(int argc, char *argv[])
     populate_array();
 
 #ifdef DEBUG
-    printf("Input array:\n");
+    printf("\n");
     print_array(a);
 #endif
 
     relax_array(all_threads_args);
 
 #ifdef DEBUG
-    printf("Output array:\n");
     print_array(a);
 #endif
+
+    printf("total iterations: %d\n", iterations);
 
     // deallocate memory
     free(a);
