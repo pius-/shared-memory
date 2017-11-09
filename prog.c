@@ -6,7 +6,6 @@
 
 struct program_args
 {
-    char *filename;   // -f
     int dimension;    // -d
     int threads;      // -t
     double precision; // -p
