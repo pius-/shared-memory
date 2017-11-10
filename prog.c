@@ -193,11 +193,11 @@ void relax_array(struct thread_args *all_threads_args)
         if (init != 0)
             exit(EXIT_FAILURE);
 
-        for (int i = 1; i < args.threads; i++)
+        for (int i = 0; i < args.threads - 1; i++)
         {
             int create = pthread_create(&threads[i], NULL,
                     (void *(*)(void *))relax_section_thread,
-                    (void *)&all_threads_args[i]);
+                    (void *)&all_threads_args[i + 1]);
 
             if (create != 0)
                 exit(EXIT_FAILURE);
@@ -209,7 +209,7 @@ void relax_array(struct thread_args *all_threads_args)
 
     if (args.threads > 1)
     {
-        for (int j = 1; j < args.threads; j++)
+        for (int j = 0; j < args.threads - 1; j++)
         {
             int join = pthread_join(threads[j], NULL);
             if (join != 0)
