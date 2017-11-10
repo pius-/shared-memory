@@ -83,12 +83,7 @@ void relax_section(struct thread_args *thread_args)
                 is_start = 0;
             }
 
-            double north = a[i - 1][j];
-            double south = a[i + 1][j];
-            double west = a[i][j - 1];
-            double east = a[i][j + 1];
-
-            b[i][j] = (north + east + south + west) / 4;
+            b[i][j] = (a[i-1][j] + a[i+1][j] + a[i][j-1] + a[i][j+1]) / 4;
 
             double precision = fabs(b[i][j] - a[i][j]);
             if (precision > args.precision)
