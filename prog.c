@@ -118,7 +118,13 @@ void relax_section_thread(struct thread_args *args)
 
 void relax_section_main(struct thread_args *args)
 {
+
+#ifdef DEBUG
+    print_array(args->a, args->dimensions);
+#endif
+
     int iterations = 0;
+
     while (1)
     {
         relax_section(args);
