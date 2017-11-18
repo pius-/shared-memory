@@ -60,6 +60,7 @@ void populate_array(double ***a, double ***b, int dimensions)
 void relax_section(struct thread_args *args)
 {
     char is_start = 1;
+    char is_section_done = 1;
     int cells_remaining = args->cells_to_relax;
 
     for (int i = args->start_row; i < args->dimensions - 1; i++)
@@ -82,12 +83,14 @@ void relax_section(struct thread_args *args)
                 + args->a[i][j - 1] 
                 + args->a[i][j + 1]) / 4;
 
-            if (fabs(args->b[i][j] - args->a[i][j]) > args->precision)
+			if (is_section_done
+				&& fabs(args->b[i][j] - args->a[i][j]) > args->precision)
             {
                 // this is a datarace between threads that need to continue
                 // this is fine, as they are all trying to set it to 0
                 // so it doesnt matter if one thread overwrites another
-                is_done = 0;
+				is_done = 0;
+				is_section_done = 0;
             }
 
             cells_remaining--;
