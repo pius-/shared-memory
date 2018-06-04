@@ -1,4 +1,4 @@
-# Shared Memory
+# Shared memory
 The aim of this project is to use low-level primitives for parallelism on a 
 shared memory architecture to implement the relaxation technique for solving 
 differential equations. This is achieved by having an array of values and 
